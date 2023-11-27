@@ -5,6 +5,7 @@ import com.diningroom.cart.dto.ItemOrderDTO;
 import com.diningroom.cart.dto.OrdersDTO;
 import com.diningroom.cart.entities.ItemOrder;
 import com.diningroom.cart.entities.Orders;
+import com.diningroom.cart.feignclients.ClientFeignClient;
 import com.diningroom.cart.feignclients.ProductFeignClient;
 import com.diningroom.cart.feignclients.WarehouseFeignClient;
 import com.diningroom.cart.repository.ItemOrderRepository;
@@ -31,8 +32,8 @@ public class ItemOrderService {
     private ProductFeignClient productFeignClient;
     @Autowired
     private OrdersService ordersService;
-//    @Autowired
-//    private ClientService clientService;
+    @Autowired
+    private ClientFeignClient clientFeignClient;
     @Autowired
     private WarehouseFeignClient warehouseFeignClient;
 
@@ -57,19 +58,16 @@ public class ItemOrderService {
 
     public ResponseEntity<String> mountNewItemOrder(ItemOrderDTO itemOrderDTOparam) {
 
-        Boolean productExists = productFeignClient.exists(itemOrderDTOparam.getProductId()).getBody();
-
         if(!productFeignClient.exists(itemOrderDTOparam.getProductId()).getBody()) {
             return new ResponseEntity<>("Produto de ID " + itemOrderDTOparam.getProductId() + " não encontrado.", HttpStatus.NOT_FOUND);
         }
 
-//        if(!this.clientService.existsById(itemOrderDTOparam.getClient_id())) {
-//            return new ResponseEntity<>("Cliente de ID " + itemOrderDTOparam.getProduct_id() + " não encontrado.", HttpStatus.NOT_FOUND);
-//        }
+        if(!clientFeignClient.exists(itemOrderDTOparam.getClientId()).getBody()) {
+            return new ResponseEntity<>("Cliente de ID " + itemOrderDTOparam.getClientId() + " não encontrado.", HttpStatus.NOT_FOUND);
+        }
 
         try{
-            ResponseEntity<String> response = warehouseFeignClient.updateStockByProduct(itemOrderDTOparam.getProductId(), itemOrderDTOparam.getQuantity());
-            String retorno = response.toString();
+            warehouseFeignClient.updateStockByProduct(itemOrderDTOparam.getProductId(), itemOrderDTOparam.getQuantity());
         }catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
         }
